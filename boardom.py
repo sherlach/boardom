@@ -221,7 +221,7 @@ class knight(piece):
         colourstrip(response, self)
         return response
     def attackbox(self):
-        self.movebox()
+        return self.movebox()
 
 class bishop(piece):
     def getsym(self):
@@ -382,13 +382,21 @@ class king(piece):
 
 
 def checkcheck(pieces, kingcolour): #is the king of colour kingcolour in check?
-    fullresponse=[]
+    attackboxes=[]
     for piece in pieces:
         if piece.colour != kingcolour:
             g = piece.attackbox()
-            for p in g:
-                fullresponse.append(p)
-    print(fullresponse)  #this bit works, now make it check the colour
+            if g:
+                for p in g:
+                    attackboxes.append(p)
+        elif piece.getsym().lower() == "g":
+            kingloc = (piece.locx, piece.locy)
+    if kingloc in attackboxes:
+        return True
+    else:
+        return False
+    #return fullresponse  #compare King-of-opposite-colour's location to this
+
 
 
 def colourstrip(response, piece): #this function sucks.
@@ -413,6 +421,8 @@ pieces.append(pawn("Black", 2, 1))
 pieces.append(knight("Black", 3, 4))
 
 pieces.append(bishop("White", 1, 4))
+
+#print(checkcheck(pieces, "White"))
 
 
 def reset():
