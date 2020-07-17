@@ -7,7 +7,7 @@ This is meant to eventually be a python implementation of a chess engine, using 
 
 
  ```
-key:     0 - empty square       
+ key:    0 - empty square       
          p - pawn
          r - rook
          k - knight
