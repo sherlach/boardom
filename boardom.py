@@ -28,10 +28,12 @@
 #   then shake it up with a function that "filters out" pieces of the same colour    
 # [] inconsistency with "movebox" vs "attackbox", although that's tricky for pawn
 # [x] they should all be returning, not printing like I did for the debugging
+# [] fix checkcheck
 
 
 
 #▒ welcome to boardom ▒#
+print("▒ welcome to boardom ▒")
 
 def refreshdisplay():
     global board
@@ -439,8 +441,6 @@ def reset():
 
 reset()
 
-print(pieces[23].getsym())
-
 def mainloop():
     global turn
     display(pieces)
@@ -449,7 +449,7 @@ def mainloop():
     if moveflag == True:
         executemove(starting, ending)
         #checkcheck() in normal context (unlike the one within confirmmove)
-        turn+=turn
+        turn=turn+1
     else:
         print("Input unsuccessful, refreshing turn")
 
@@ -462,11 +462,11 @@ def confirmmove(start, end): #we want to find the piece with the starting co-ord
     flag=False
     for piece in pieces:
         if str((piece.locx, piece.locy)) == start and piece.colour == whoseturn(): #if there's a piece there ur allowed to control
-            print("this bit works")
+            #print("this bit works")
             try:
                 for item in piece.movebox():
                     if str(item) == end:
-                        print("Nice")
+                        print("Valid move!")
                         flag=True
                     #we also need to check if the player put their own king in check
                     #then we're good to go!
@@ -489,5 +489,3 @@ def executemove(start, end):
 
 while True:
     mainloop()
-
-
