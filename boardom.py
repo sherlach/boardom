@@ -48,6 +48,12 @@ def whoseturn():
     else:
         return "Black"
 
+def oppositeturn():
+    if turn%1 ==1:
+        return "Black"
+    else:
+        return "White"
+
 def display(pieces):
     refreshdisplay()
     for item in pieces:
@@ -458,10 +464,11 @@ def mainloop():
     moveflag = confirmmove(starting, ending) #confirmmove returns True or False, but also prints what went wrong if False.
     if moveflag == True:
         executemove(starting, ending)
-        #checkcheck() in normal context (unlike the one within confirmmove)
+        checkcheck(pieces, oppositeturn()) #opposite context to the one within confirmmove
         turn=turn+1
     else:
         print("Input unsuccessful, refreshing turn")
+
 
 def getmove():
     start = input("Which piece do you want to move? Use co-ordinate notation (x, y) \n")
@@ -478,13 +485,17 @@ def confirmmove(start, end): #we want to find the piece with the starting co-ord
                     if str(item) == end:
                         print("Valid move!")
                         flag=True
-                    #we also need to check if the player put their own king in check
+                    #we also need to check if the player put their own king in check, but this is sorta hard since the executemove hasn't happened yet. maybe a "fakepieces"
                     #then we're good to go!
+                    else:
+                        error = "You can't move there."
             except:
-                print("error")
+                error = "It seems the piece you chose is unable to move."
+        else:
+            error = "Hmm, I don't think that's a piece you're allowed to move."
 
     if flag==False:
-        print("Something went wrong, try again ")  #maybe add more helpful error codes later
+        print("Something went wrong, try again -"+ error)  #maybe add more helpful error codes later
     return flag
     
 def executemove(start, end):
