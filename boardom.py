@@ -1,24 +1,3 @@
-## key:     0 - empty square       
-##          p - pawn
-##          r - rook
-##          k - knight
-##          b - bishop
-##          q - queen
-##          g - king
-## lowercase letters denotes black piece, UPPERCASE LETTERS DENOTE WHITE
-
-##Here: have a board map!
-#    0    1    2    3    4    5    6    7
-# 0['r', 'k', 'b', 'q', 'g', 'b', 'k', 'r']
-# 1['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p']
-# 2['0', '0', '0', '0', '0', '0', '0', '0']
-# 3['0', '0', '0', '0', '0', '0', '0', '0']
-# 4['0', '0', '0', '0', '0', '0', '0', '0']
-# 5['0', '0', '0', '0', '0', '0', '0', '0']
-# 6['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P']
-# 7['R', 'K', 'B', 'Q', 'G', 'B', 'K', 'R']
-
-
 ##Current issues to fix:                           x=done, maybe | X=done, definitely
 # [] General ugliness of code
 # [] some edge cases may be ultra buggy
@@ -29,11 +8,30 @@
 # [x] inconsistency with "movebox" vs "attackbox", although that's tricky for pawn
 # [x] they should all be returning, not printing like I did for the debugging
 # [] fix checkcheck
-# [] use A1, B2 instead of (0, 0), (1, 1)
-
+# [x] use A1, B2 instead of (0, 0), (1, 1)
+# [] pawn promotion and castling
 
 #▒ welcome to boardom ▒#
 print("▒ welcome to boardom ▒")
+
+##define display and turn-related functions
+coordict = {
+}
+
+coordict.update(dict.fromkeys(['A', '1'], 0))
+coordict.update(dict.fromkeys(['B', '2'], 1))
+coordict.update(dict.fromkeys(['C', '3'], 2))
+coordict.update(dict.fromkeys(['D', '4'], 3))
+coordict.update(dict.fromkeys(['E', '5'], 4))
+coordict.update(dict.fromkeys(['F', '6'], 5))
+coordict.update(dict.fromkeys(['G', '7'], 6))
+coordict.update(dict.fromkeys(['H', '8'], 7))
+
+
+def coordtrans(thing):
+    x = coordict[thing[0]] #is the letter
+    y = coordict[thing[1]] #is the number
+    return (x, y)
 
 def refreshdisplay():
     global board
@@ -49,7 +47,7 @@ def whoseturn():
         return "Black"
 
 def oppositeturn():
-    if turn%1 ==1:
+    if turn % 2 ==1:
         return "Black"
     else:
         return "White"
@@ -66,11 +64,9 @@ def display(pieces):
         count+=1
     #print("   A  B  C  D  E  F  G  H ")
     print("\n")
-    
 
-##So it turns out the way I had everything set out with ""attackbox"" and ""movebox"" was just really stupid, I should have just made the pawn
-##check more sophisticated, it'll be done. some time.
 
+##set up the piece classes
 class piece():
     def __init__(self,colour,locx,locy):
         self.locx = locx
@@ -121,7 +117,7 @@ class pawn(piece):
             else:
                 response.append((self.locx, self.locy+1))
                 if turn == 2:
-                    response.append((self.locx, self.locy-2))
+                    response.append((self.locx, self.locy+2))
                 for item in pieces:
                     if item.locx == self.locx and item.locy == self.locy+1:
                         response.remove((self.locx, self.locy+1))
@@ -144,7 +140,7 @@ class rook(piece):
 
 def rookcheck(self):
     left=[] 
-    right=[]
+    right=[] # <= turn these 4 into one dict
     up=[]
     down=[]
     for item in pieces:
@@ -361,33 +357,22 @@ class king(piece):
             return "g"
     def movebox(self):
         response = self.attackbox()
+        return response
         
-    def attackbox(self):
+    def attackbox(self): ##this all needs to be fixed, it looks shonky
         response = []
         for x in range(-1, 2):
             for y in range (-1, 2):
-                if x == 0 and y == 0:
-                    #print("non-valide")
-                    #print(x)
-                    #print(y)
+                if self.locx+x > 7 or self.locx+x < 0 or self.locy+y >7  or self.locy+y <0 or (x==0 and y ==0):
                     pass
-                elif self.locx+x > 7 or self.locx+x < 0 or self.locy+y >7  or self.locy+y <0:
-                    pass
-                    #print("non-valid")
-                    #print((self.locx+x, self.locy+y))
-                    #print((self.locx+x, self.locy+y))
                 else:
                     response.append((self.locx+x, self.locy+y))
-                    #print("nice")
-                    #print(x)
-                    #print(y)
         for item in pieces:
             for thing in response:
                 if (item.locx, item.locy) == thing:
                     response.remove(thing)
         colourstrip(response, self)
         return response
-
 
 def checkcheck(pieces, kingcolour): #is the king of colour kingcolour in check?
     attackboxes=[]
@@ -403,8 +388,6 @@ def checkcheck(pieces, kingcolour): #is the king of colour kingcolour in check?
         return True
     else:
         return False
-    #return fullresponse  #compare King-of-opposite-colour's location to this
-
 
 def colourstrip(response, piece):
     for item in pieces:
@@ -413,23 +396,8 @@ def colourstrip(response, piece):
     return response
 
 
-coordict = {
-}
 
-coordict.update(dict.fromkeys(['A', '1'], 0))
-coordict.update(dict.fromkeys(['B', '2'], 1))
-coordict.update(dict.fromkeys(['C', '3'], 2))
-coordict.update(dict.fromkeys(['D', '4'], 3))
-coordict.update(dict.fromkeys(['E', '5'], 4))
-coordict.update(dict.fromkeys(['F', '6'], 5))
-coordict.update(dict.fromkeys(['G', '7'], 6))
-coordict.update(dict.fromkeys(['H', '8'], 7))
-
-
-def coordtrans(thing):
-    x = coordict[thing[0]] #is the letter
-    y = coordict[thing[1]] #is the number
-    return (x, y)
+##scenario testing for debugging here
 
 turn=1
 
@@ -447,8 +415,7 @@ pieces.append(knight("Black", 3, 4))
 
 pieces.append(bishop("White", 1, 4))
 
-#print(checkcheck(pieces, "White"))
-
+##end scenario testing
 
 def reset():
     global turn, pieces
@@ -482,11 +449,12 @@ def mainloop():
     starting, ending = getmove()
     moveflag = confirmmove(starting, ending) #confirmmove returns True or False, but also prints what went wrong if False.
     if moveflag == True:
-        executemove(starting, ending)
-        checkcheck(pieces, oppositeturn()) #opposite context to the one within confirmmove
+        executemove(pieces, starting, ending)
+        if checkcheck(pieces, oppositeturn()):
+            print("Check!") #opposite context to the one within confirmmove
         turn=turn+1
     else:
-        print("Input unsuccessful, refreshing turn")
+        print("Input unsuccessful, refreshing turn...")
 
 
 def getmove():
@@ -498,36 +466,38 @@ def getmove():
 
 def confirmmove(start, end): #we want to find the piece with the starting co-ords and call movebox on it. Then we check if movebox matches the end-coords suggested. Then we call checkcheck.
     flag=False
-    print((end))
     error = "Hmm, I don't think that's a piece you're allowed to move."
     for piece in pieces:
         if (piece.locx, piece.locy) == start and piece.colour == whoseturn(): #if there's a piece there ur allowed to control
             try:
                 for item in piece.movebox():
                     if item == end:
-                        print("Valid move!")
+                        #print("Valid move!")
+
                         flag=True
                     #we also need to check if the player put their own king in check, but this is sorta hard since the executemove hasn't happened yet. maybe a "fakepieces"
-                    #then we're good to go!
                     else:
                         error = "You can't move there."
             except:
                 error = "It seems the piece you chose is unable to move."
         else:
             pass
-
     if flag==False:
-        print("Something went wrong, try again - "+ error)  #maybe add more helpful error codes later
+        print("Something went wrong, try again - "+ error)
     return flag
     
-def executemove(start, end):
+def executemove(group, start, end):
 #we want to remove anything in the `end` position and then change the loc values of the piece in `start` to be `end` 
-    for item in pieces:
+    for item in group:
         if (item.locx, item.locy) == end:
-            pieces.remove(item)
+            group.remove(item)
         elif (item.locx, item.locy) == start:
             item.locx = end[0]
             item.locy = end[1]
+
+def debug(group):
+    for item in group:
+        print((item.locx, item.locy))
 
 while True:
     mainloop()
