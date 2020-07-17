@@ -7,7 +7,7 @@
 #   then shake it up with a function that "filters out" pieces of the same colour    
 # [x] inconsistency with "movebox" vs "attackbox", although that's tricky for pawn
 # [x] they should all be returning, not printing like I did for the debugging
-# [] fix checkcheck
+# [x] fix checkcheck
 # [x] use A1, B2 instead of (0, 0), (1, 1)
 # [] pawn promotion and castling
 
@@ -41,13 +41,13 @@ def refreshdisplay():
             row.append("0")
 
 def whoseturn():
-    if turn % 2 ==1:
+    if turn % 2 == 1:
         return "White"
     else:
         return "Black"
 
 def oppositeturn():
-    if turn % 2 ==1:
+    if turn % 2 == 1:
         return "Black"
     else:
         return "White"
@@ -62,7 +62,6 @@ def display(pieces):
     for row in board:
         print(str(count)+" ["+"][".join(row)+"]")
         count+=1
-    #print("   A  B  C  D  E  F  G  H ")
     print("\n")
 
 
@@ -111,7 +110,7 @@ class pawn(piece):
                         response.append((item.locx, item.locy))
                     elif item.locx == self.locx-1 and item.locy == self.locy-1:
                         response.append((item.locx, item.locy))
-        elif self.colour=="Black": #really, this is just an `else` but yolo
+        else:
             if self.locy==0:
                 return
             else:
@@ -444,7 +443,6 @@ def reset():
 
 reset()
 
-
 def mainloop():
     global turn
     cache=None
@@ -465,10 +463,6 @@ def mainloop():
     else:
         print("Input unsuccessful, refreshing turn...")
 
-def recache(cache):
-    pieces=cache
-
-
 def getmove():
     start = input("Which piece do you want to move? Use notation E7 \n")
     end = input("Where do you want to move it? Same notation again please. \n")
@@ -481,19 +475,15 @@ def confirmmove(start, end): #we want to find the piece with the starting co-ord
     error = "Hmm, I don't think that's a piece you're allowed to move."
     for piece in pieces:
         if (piece.locx, piece.locy) == start and piece.colour == whoseturn(): #if there's a piece there ur allowed to control
-            #try:
-            if True:
+            try:
                 for item in piece.movebox():
                     if item == end:
                         flag=True
                     #we also need to check if the player put their own king in check, but this is sorta hard since the executemove hasn't happened yet. maybe a "fakepieces"
                     else:
                         error = "You can't move there."
-            #except:
-            
-            #    error = "It seems the piece you chose is unable to move."
-        else:
-            pass
+            except:
+                error="Looks like that piece has no-where to move"
     if flag==False:
         print("Something went wrong, try again - "+ error)
     return flag
@@ -508,7 +498,6 @@ def executemove(start, end):
         elif (item.locx, item.locy) == start:
             item.locx = end[0]
             item.locy = end[1]
-            #print((item.locx, item.locy))
     return cache
 
 def debug(group):
