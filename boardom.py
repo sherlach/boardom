@@ -26,10 +26,10 @@
 # [x] MAKE THE MOVE-CHECKS COLOUR SENSITIVE SINCE YOU *ARE* ALLOWED TO TAKE THE PIECE'S SQUARE IF IT IS A DIFFERENT COLOUR!
 #   ^current plan for this one is to make >all< the pieces return "as if" all pieces were opposite colour, ie. "takeable",
 #   then shake it up with a function that "filters out" pieces of the same colour    
-# [] inconsistency with "movebox" vs "attackbox", although that's tricky for pawn
+# [x] inconsistency with "movebox" vs "attackbox", although that's tricky for pawn
 # [x] they should all be returning, not printing like I did for the debugging
 # [] fix checkcheck
-
+# [] use A1, B2 instead of (0, 0), (1, 1)
 
 
 #▒ welcome to boardom ▒#
@@ -58,12 +58,14 @@ def display(pieces):
     refreshdisplay()
     for item in pieces:
         board[item.locy][item.locx]=item.getsym()
-    count=0
-    print("Turn "+str(turn)+": "+whoseturn()+"'s move")
-    print("   0  1  2  3  4  5  6  7 ")
+    count=1
+    print("Turn "+str(turn)+": "+whoseturn()+"'s move \n")
+    print("   A  B  C  D  E  F  G  H ")
     for row in board:
         print(str(count)+" ["+"][".join(row)+"]")
         count+=1
+    #print("   A  B  C  D  E  F  G  H ")
+    print("\n")
     
 
 ##So it turns out the way I had everything set out with ""attackbox"" and ""movebox"" was just really stupid, I should have just made the pawn
@@ -262,7 +264,7 @@ def bishopcheck(self):
                 else: #item.locy-self.locy <0
                     two.append((item.locx, item.locy))
 
-##the bit that follows needs to be cleaned up despearately lolll, the if/elses aren't really that necessary and sorta repetitive, I just worked on each case at a time.
+##the bit that follows needs to be cleaned up despearately lolll
 ##later on I'll clean it up, right now, I just want something that works.
     response=[]
     if not one: ##if we look just at the 'one' diagonal, we will see that it's possible for it to be empty or full.
@@ -404,13 +406,30 @@ def checkcheck(pieces, kingcolour): #is the king of colour kingcolour in check?
     #return fullresponse  #compare King-of-opposite-colour's location to this
 
 
-
-def colourstrip(response, piece): #this function sucks.
+def colourstrip(response, piece):
     for item in pieces:
-        #print(response)
         if item.colour == piece.colour and (item.locx, item.locy) in list(response):
             response.remove((item.locx, item.locy))
     return response
+
+
+coordict = {
+}
+
+coordict.update(dict.fromkeys(['A', '1'], 0))
+coordict.update(dict.fromkeys(['B', '2'], 1))
+coordict.update(dict.fromkeys(['C', '3'], 2))
+coordict.update(dict.fromkeys(['D', '4'], 3))
+coordict.update(dict.fromkeys(['E', '5'], 4))
+coordict.update(dict.fromkeys(['F', '6'], 5))
+coordict.update(dict.fromkeys(['G', '7'], 6))
+coordict.update(dict.fromkeys(['H', '8'], 7))
+
+
+def coordtrans(thing):
+    x = coordict[thing[0]] #is the letter
+    y = coordict[thing[1]] #is the number
+    return (x, y)
 
 turn=1
 
@@ -471,18 +490,21 @@ def mainloop():
 
 
 def getmove():
-    start = input("Which piece do you want to move? Use co-ordinate notation (x, y) \n")
-    end = input("Where do you want to move it? Co-ordinate notation again please. \n")
+    start = input("Which piece do you want to move? Use notation E7 \n")
+    end = input("Where do you want to move it? Same notation again please. \n")
+    start = coordtrans(start)
+    end = coordtrans(end)
     return start, end
 
 def confirmmove(start, end): #we want to find the piece with the starting co-ords and call movebox on it. Then we check if movebox matches the end-coords suggested. Then we call checkcheck.
     flag=False
+    print((end))
+    error = "Hmm, I don't think that's a piece you're allowed to move."
     for piece in pieces:
-        if str((piece.locx, piece.locy)) == start and piece.colour == whoseturn(): #if there's a piece there ur allowed to control
-            #print("this bit works")
+        if (piece.locx, piece.locy) == start and piece.colour == whoseturn(): #if there's a piece there ur allowed to control
             try:
                 for item in piece.movebox():
-                    if str(item) == end:
+                    if item == end:
                         print("Valid move!")
                         flag=True
                     #we also need to check if the player put their own king in check, but this is sorta hard since the executemove hasn't happened yet. maybe a "fakepieces"
@@ -492,21 +514,20 @@ def confirmmove(start, end): #we want to find the piece with the starting co-ord
             except:
                 error = "It seems the piece you chose is unable to move."
         else:
-            error = "Hmm, I don't think that's a piece you're allowed to move."
+            pass
 
     if flag==False:
-        print("Something went wrong, try again -"+ error)  #maybe add more helpful error codes later
+        print("Something went wrong, try again - "+ error)  #maybe add more helpful error codes later
     return flag
     
 def executemove(start, end):
 #we want to remove anything in the `end` position and then change the loc values of the piece in `start` to be `end` 
     for item in pieces:
-        if str((item.locx, item.locy)) == end:
+        if (item.locx, item.locy) == end:
             pieces.remove(item)
-
-        elif str((item.locx, item.locy)) == start:
-            item.locx = int(end[1])
-            item.locy = int(end[4])
+        elif (item.locx, item.locy) == start:
+            item.locx = end[0]
+            item.locy = end[1]
 
 while True:
     mainloop()
