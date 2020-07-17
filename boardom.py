@@ -374,9 +374,9 @@ class king(piece):
         colourstrip(response, self)
         return response
 
-def checkcheck(pieces, kingcolour): #is the king of colour kingcolour in check?
+def checkcheck(listing, kingcolour): #is the king of colour kingcolour in check?
     attackboxes=[]
-    for piece in pieces:
+    for piece in listing:
         if piece.colour != kingcolour:
             g = piece.attackbox()
             if g:
@@ -411,10 +411,11 @@ pieces.append(knight("White", 2, 6))
 
 pieces.append(pawn("Black", 2, 1))
 
-pieces.append(knight("Black", 3, 4))
+pieces.append(knight("Black", 5, 5))
 
 pieces.append(bishop("White", 1, 4))
 
+pieces.append(king("Black", 0, 0))
 ##end scenario testing
 
 def reset():
@@ -443,18 +444,29 @@ def reset():
 
 reset()
 
+
 def mainloop():
     global turn
+    cache=None
     display(pieces)
     starting, ending = getmove()
-    moveflag = confirmmove(starting, ending) #confirmmove returns True or False, but also prints what went wrong if False.
+    moveflag = confirmmove(starting, ending)
     if moveflag == True:
-        executemove(pieces, starting, ending)
-        if checkcheck(pieces, oppositeturn()):
-            print("Check!") #opposite context to the one within confirmmove
-        turn=turn+1
+        cache = executemove(starting, ending)
+        if checkcheck(pieces, whoseturn()):
+            print("But this would put your own king in check! Refreshing turn")
+            executemove(ending, starting)
+            if cache:
+                pieces.append(cache)
+        else:
+            if checkcheck(pieces, oppositeturn()):
+                print("Check!") #opposite context to the one within confirmmove
+            turn=turn+1
     else:
         print("Input unsuccessful, refreshing turn...")
+
+def recache(cache):
+    pieces=cache
 
 
 def getmove():
@@ -469,31 +481,35 @@ def confirmmove(start, end): #we want to find the piece with the starting co-ord
     error = "Hmm, I don't think that's a piece you're allowed to move."
     for piece in pieces:
         if (piece.locx, piece.locy) == start and piece.colour == whoseturn(): #if there's a piece there ur allowed to control
-            try:
+            #try:
+            if True:
                 for item in piece.movebox():
                     if item == end:
-                        #print("Valid move!")
-
                         flag=True
                     #we also need to check if the player put their own king in check, but this is sorta hard since the executemove hasn't happened yet. maybe a "fakepieces"
                     else:
                         error = "You can't move there."
-            except:
-                error = "It seems the piece you chose is unable to move."
+            #except:
+            
+            #    error = "It seems the piece you chose is unable to move."
         else:
             pass
     if flag==False:
         print("Something went wrong, try again - "+ error)
     return flag
     
-def executemove(group, start, end):
+def executemove(start, end):
 #we want to remove anything in the `end` position and then change the loc values of the piece in `start` to be `end` 
-    for item in group:
+    cache=None
+    for item in pieces:
         if (item.locx, item.locy) == end:
-            group.remove(item)
+            pieces.remove(item)
+            cache = item
         elif (item.locx, item.locy) == start:
             item.locx = end[0]
             item.locy = end[1]
+            #print((item.locx, item.locy))
+    return cache
 
 def debug(group):
     for item in group:
