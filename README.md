@@ -6,11 +6,11 @@ The cost of viewing is constructive feedback for me, please be nice & helpful, n
 This is meant to eventually be a python implementation of a chess engine, using no "imports". Cheers.
 
 
- key:     0 - empty square       
+ ```key:     0 - empty square       
           p - pawn
           r - rook
           k - knight
           b - bishop
           q - queen
           g - king
- lowercase letters denotes black piece, UPPERCASE LETTERS DENOTE WHITE
+ lowercase letters denotes black piece, UPPERCASE LETTERS DENOTE WHITE```
