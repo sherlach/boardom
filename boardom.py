@@ -1,20 +1,16 @@
 ##Current issues to fix:                           x=done, maybe | X=done, definitely
-# [] General ugliness of code
+# [] General ugliness of code (make it readable)
+# [] Ugly code part 2 (make it efficient)
 # [] some edge cases may be ultra buggy
-# [x] fix the main loop
-# [x] MAKE THE MOVE-CHECKS COLOUR SENSITIVE SINCE YOU *ARE* ALLOWED TO TAKE THE PIECE'S SQUARE IF IT IS A DIFFERENT COLOUR!
-#   ^current plan for this one is to make >all< the pieces return "as if" all pieces were opposite colour, ie. "takeable",
-#   then shake it up with a function that "filters out" pieces of the same colour    
-# [x] inconsistency with "movebox" vs "attackbox", although that's tricky for pawn
-# [x] they should all be returning, not printing like I did for the debugging
-# [x] fix checkcheck
-# [x] use A1, B2 instead of (0, 0), (1, 1)
 # [] pawn promotion and castling
+# am considering making all the global terms IN ALL CAPS now that I have more knowledge, should 
+# help making things clearer to understand
 
 #▒ welcome to boardom ▒#
 print("▒ welcome to boardom ▒")
 
-##define display and turn-related functions
+
+##this part sets up the dictionary and function to allow for A1 as input, not (0,0)
 coordict = {
 }
 
@@ -33,6 +29,8 @@ def coordtrans(thing):
     y = coordict[thing[1]] #is the number
     return (x, y)
 
+
+##this part allows you to control the display and check whose turn it is
 def refreshdisplay():
     global board
     board = [ [], [], [], [], [], [], [], [] ]
@@ -40,39 +38,41 @@ def refreshdisplay():
         for number in range(8):
             row.append("0")
 
-def whoseturn():
-    if turn % 2 == 1:
-        return "White"
-    else:
-        return "Black"
-
-def oppositeturn():
-    if turn % 2 == 1:
-        return "Black"
-    else:
-        return "White"
-
 def display(pieces):
     refreshdisplay()
     for item in pieces:
         board[item.locy][item.locx]=item.getsym()
     count=1
-    print("Turn "+str(turn)+": "+whoseturn()+"'s move \n")
+    print("Turn "+str(turn)+": "+whoseturn("normal")+"'s move \n")
     print("   A  B  C  D  E  F  G  H ")
     for row in board:
         print(str(count)+" ["+"][".join(row)+"]")
         count+=1
     print("\n")
 
+def whoseturn(state): #make this cleaner???! but how?!?!
+    if state == "normal":
+        if turn % 2 == 1:
+            return "White"
+        else:
+            return "Black"
+    elif state == "reverse":
+        if turn % 2 == 1:
+            return "Black"
+        else:
+            return "White"
 
-##set up the piece classes
-class piece():
+
+##set up the piece classes. (locx, locy) is the current position.
+##attackbox refers to what squares the piece is "threatening" and movebox is where it can go -
+##pawns are the reason this distinction has been made.
+class Piece():
     def __init__(self,colour,locx,locy):
         self.locx = locx
         self.locy = locy
         self.colour = colour
 
-class pawn(piece):
+class Pawn(Piece):
     def getsym(self):
         if self.colour == "White":
             return "P"
@@ -98,7 +98,7 @@ class pawn(piece):
         response=[]
         if self.colour=="White":
             if self.locy == 7:
-                return
+                return #code for promotion is inserted here????? maybe??? i dunno
             else:
                 response.append((self.locx, self.locy-1))
                 if turn == 1:
@@ -126,7 +126,7 @@ class pawn(piece):
                         response.append((item.locx, item.locy))
         return response
 
-class rook(piece):
+class Rook(Piece):
     def getsym(self):
         if self.colour == "White":
             return "R"
@@ -137,7 +137,7 @@ class rook(piece):
     def movebox(self):
         return rookcheck(self)
 
-def rookcheck(self):
+def rookcheck(self): #rook and bishop still suck, the functions that is
     left=[] 
     right=[] # <= turn these 4 into one dict
     up=[]
@@ -151,35 +151,35 @@ def rookcheck(self):
             right.append(item)
         elif item.locy == self.locy and self.locx - item.locx > 0:
             left.append(item)          
-        else:
-            pass
+        #else:
+        #    pass
     templist = []
     for item in left:
         templist.append(item.locx)
-    try:
+    if left:
         leftmost = min(templist)-1
-    except:
+    else:
         leftmost = -1
     templist = []
     for item in right:
         templist.append(item.locx)
-    try:
+    if right:
         rightmost = max(templist)+1 #since we are expecting a negative number and we want the "least negative"
-    except:
+    else:
         rightmost = 8
     templist = []
     for item in up:
         templist.append(item.locy)
-    try:
+    if up:
         upmost = min(templist)-1
-    except:
+    else:
         upmost = -1
     templist = []
     for item in down:
         templist.append(item.locy)
-    try:
+    if down:
         downmost = max(templist)+1
-    except:
+    else:
         downmost = 8
     response=[]
     for number in range(0, self.locx-leftmost):
@@ -197,7 +197,7 @@ def rookcheck(self):
     colourstrip(response, self)
     return response    
 
-class knight(piece):
+class Knight(Piece):
     def getsym(self):
         if self.colour == "White":
             return "K"
@@ -205,28 +205,24 @@ class knight(piece):
             return "k"
     def movebox(self):
         response=[]
-        if self.locx+2 in range(8) and self.locy+1 in range(8):
-            response.append((self.locx+2, self.locy+1))
-        if self.locx+2 in range(8) and self.locy-1 in range(8):
-            response.append((self.locx+2, self.locy-1))
-        if self.locx-2 in range(8) and self.locy+1 in range(8):
-            response.append((self.locx-2, self.locy+1))
-        if self.locx-2 in range(8) and self.locy-1 in range(8):
-            response.append((self.locx-2, self.locy-1))
-        if self.locx+1 in range(8) and self.locy+2 in range(8):
-            response.append((self.locx+1, self.locy+2))
-        if self.locx-1 in range(8) and self.locy+2 in range(8):
-            response.append((self.locx-1, self.locy+2))
-        if self.locx+1 in range(8) and self.locy-2 in range(8):
-            response.append((self.locx+1, self.locy-2))
-        if self.locx-1 in range(8) and self.locy-2 in range(8):
-            response.append((self.locx-1, self.locy-2))
+        #we're simply looping every possible L-move and checking if it's on the board
+        xmod, ymod = 2, 1
+        for i in range(9): 
+            if self.locx+xmod in range(8) and self.locy+ymod in range(8):
+                response.append((self.locx+xmod, self.locy+ymod))
+            
+            ymod = ymod*(-1)
+            if i % 4 == 1:
+                xmod = xmod*(-1)
+            if i == 3:
+                xmod, ymod = 1, 2
+            
         colourstrip(response, self)
         return response
     def attackbox(self):
         return self.movebox()
 
-class bishop(piece):
+class Bishop(Piece):
     def getsym(self):
         if self.colour == "White":
             return "B"
@@ -333,7 +329,7 @@ def bishopcheck(self):
     colourstrip(response, self)        
     return response
 
-class queen(piece):
+class Queen(Piece):
     def getsym(self):
         if self.colour == "White":
             return "Q"
@@ -347,8 +343,10 @@ class queen(piece):
             response.append(item)
         colourstrip(response, self)
         return response
+    def movebox(self):
+        return attackbox(self)
 
-class king(piece):
+class King(Piece):
     def getsym(self):
         if self.colour == "White":
             return "G"
@@ -366,10 +364,6 @@ class king(piece):
                     pass
                 else:
                     response.append((self.locx+x, self.locy+y))
-        for item in pieces:
-            for thing in response:
-                if (item.locx, item.locy) == thing:
-                    response.remove(thing)
         colourstrip(response, self)
         return response
 
@@ -388,7 +382,7 @@ def checkcheck(listing, kingcolour): #is the king of colour kingcolour in check?
     else:
         return False
 
-def colourstrip(response, piece):
+def colourstrip(response, piece): #you can't capture your own piece!
     for item in pieces:
         if item.colour == piece.colour and (item.locx, item.locy) in list(response):
             response.remove((item.locx, item.locy))
@@ -402,44 +396,47 @@ turn=1
 
 pieces=[]
 
-pieces.append(pawn("White", 1, 2))
+pieces.append(Rook("White", 1, 2))
 
-pieces.append(king("White", 2, 2))
+pieces.append(Rook("White", 2, 2))
 
-pieces.append(knight("White", 2, 6))
+pieces.append(Rook("White", 2, 6))
 
-pieces.append(pawn("Black", 2, 1))
+pieces.append(Rook("Black", 2, 1))
 
-pieces.append(knight("Black", 5, 5))
+pieces.append(Rook("Black", 5, 5))
 
-pieces.append(bishop("White", 1, 4))
+pieces.append(King("White", 1, 4))
 
-pieces.append(king("Black", 0, 0))
+pieces.append(King("Black", 0, 0))
+
+print(pieces[2].attackbox())
 ##end scenario testing
+
 
 def reset():
     global turn, pieces
     turn=1
     pieces = []
     for number in range(8):
-        pieces.append(pawn("White", number, 6))
-        pieces.append(pawn("Black", number, 1))
-    pieces.append(rook("White", 0, 7))
-    pieces.append(rook("White", 7, 7))
-    pieces.append(knight("White", 1, 7))
-    pieces.append(knight("White", 6, 7))
-    pieces.append(bishop("White", 2, 7))
-    pieces.append(bishop("White", 5, 7))
-    pieces.append(queen("White", 3, 7))
-    pieces.append(king("White", 4, 7))
-    pieces.append(rook("Black", 0, 0))
-    pieces.append(rook("Black", 7, 0))
-    pieces.append(knight("Black", 1, 0))
-    pieces.append(knight("Black", 6, 0))
-    pieces.append(bishop("Black", 2, 0))
-    pieces.append(bishop("Black", 5, 0))
-    pieces.append(queen("Black", 3, 0))
-    pieces.append(king("Black", 4, 0))
+        pieces.append(Pawn("White", number, 6))
+        pieces.append(Pawn("Black", number, 1))
+    pieces.append(Rook("White", 0, 7))
+    pieces.append(Rook("White", 7, 7))
+    pieces.append(Knight("White", 1, 7))
+    pieces.append(Knight("White", 6, 7))
+    pieces.append(Bishop("White", 2, 7))
+    pieces.append(Bishop("White", 5, 7))
+    pieces.append(Queen("White", 3, 7))
+    pieces.append(King("White", 4, 7))
+    pieces.append(Rook("Black", 0, 0))
+    pieces.append(Rook("Black", 7, 0))
+    pieces.append(Knight("Black", 1, 0))
+    pieces.append(Knight("Black", 6, 0))
+    pieces.append(Bishop("Black", 2, 0))
+    pieces.append(Bishop("Black", 5, 0))
+    pieces.append(Queen("Black", 3, 0))
+    pieces.append(King("Black", 4, 0))
 
 reset()
 
@@ -451,13 +448,13 @@ def mainloop():
     moveflag = confirmmove(starting, ending)
     if moveflag == True:
         cache = executemove(starting, ending)
-        if checkcheck(pieces, whoseturn()):
+        if checkcheck(pieces, whoseturn("normal")):
             print("But this would put your own king in check! Refreshing turn")
             executemove(ending, starting)
             if cache:
                 pieces.append(cache)
         else:
-            if checkcheck(pieces, oppositeturn()):
+            if checkcheck(pieces, whoseturn("reverse")):
                 print("Check!") #opposite context to the one within confirmmove
             turn=turn+1
     else:
@@ -474,7 +471,7 @@ def confirmmove(start, end): #we want to find the piece with the starting co-ord
     flag=False
     error = "Hmm, I don't think that's a piece you're allowed to move."
     for piece in pieces:
-        if (piece.locx, piece.locy) == start and piece.colour == whoseturn(): #if there's a piece there ur allowed to control
+        if (piece.locx, piece.locy) == start and piece.colour == whoseturn("normal"): #if there's a piece there ur allowed to control
             try:
                 for item in piece.movebox():
                     if item == end:
