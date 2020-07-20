@@ -3,6 +3,7 @@
 # [] Ugly code part 2 (make it efficient)
 # [] some edge cases may be ultra buggy
 # [] pawn promotion and castling
+# [] pawns can move 2 squares on any time they are first moved, it's not tied to turn number!
 # am considering making all the global terms IN ALL CAPS now that I have more knowledge, should 
 # help making things clearer to understand
 
@@ -22,7 +23,7 @@ coordict = {
 }
 
 letters = "ABCDEFGH"
-for number in range(7):
+for number in range(8):
     coordict.update(dict.fromkeys([letters[number], str(number+1)], number))
 
 def coordtrans(thing):
@@ -175,12 +176,12 @@ def getclosestpiece(selection, orientation, polarity):  # selection is list, ori
     response = polarity                                 # (closer to 8? or closer to -1?)
     if polarity == 8 or polarity == -1:                                
         if selection:
-            for item in selection:                              
-                if orientation == "locx": templist.append(item.locx)
-                if orientation == "locy": templist.append(item.locy)
-
-            response = max(templist)+1 if polarity == 8 else min(templist)-1
-
+            for item in selection:                           
+                if orientation == "locx": 
+                    templist.append(item.locx)
+                if orientation == "locy": 
+                    templist.append(item.locy)
+            response = min(templist)+1 if polarity == 8 else max(templist)-1
     return response
 
 class Knight(Piece):
@@ -234,7 +235,7 @@ def bishopcheck(self):
     for item in pieces:
         if (item.locx, item.locy) == (self.locx, self.locy):
             pass
-        elif (item.locx - self.locx)**2 == (item.locy-self.locy)**2:
+        elif (item.locx - self.locx)**2 == (item.locy - self.locy)**2:
             # this checks if a piece is on the diagonal, now we want 'em sorted
             # into the 4 quadrant groups.
             if item.locx-self.locx > 0:
@@ -250,10 +251,11 @@ def bishopcheck(self):
 
 ##the bit that follows needs to be cleaned up despearately lolll
 ##later on I'll clean it up, right now, I just want something that works.
+## there is a >lot< of redundancy that would be fixed by thinking about what the
+## algorithm is meant to be doing
     response = []
     if not one: ##if we look just at the 'one' diagonal, we will see that it's possible for it to be empty or full.
-        confx, confy  = self.locx, self.locy
-        tempx, tempy = confx, confy
+        confx, confy = tempx, tempy = self.locx, self.locy
         while tempx in range(0, 8) and tempy in range(0, 8):  # since we are +1
             # at end, make it 6+1
             confx, confy = tempx, tempy
@@ -261,9 +263,8 @@ def bishopcheck(self):
             if (confx, confy) != (self.locx, self.locy):
                 response.append((confx, confy))
     else:
-        rr = min(one)
-        confx, confy = self.locx, self.locy
-        tempx, tempy = confx, confy
+        rr = min(one) ##rr is the closest piece to self
+        confx, confy = tempx, tempy = self.locx, self.locy
         while tempx in range(rr[0]+1) or tempy in range(rr[1], 7-rr[1]+1):
             # since we are +1 at end, make it 6+1
             confx, confy = tempx, tempy
@@ -271,8 +272,7 @@ def bishopcheck(self):
             if (confx, confy) != (self.locx, self.locy):
                 response.append((confx, confy))
     if not two:
-        confx, confy = self.locx, self.locy
-        tempx, tempy = confx, confy
+        confx, confy = tempx, tempy = self.locx, self.locy
         while tempx in range(0, 8) and tempy in range(0, 8):
             confx, confy = tempx, tempy
             tempx, tempy = tempx-1, tempy-1
@@ -280,17 +280,14 @@ def bishopcheck(self):
                 response.append((confx, confy))
     else:
         rr = max(two)
-        confx, confy = self.locx, self.locy
-        tempx, tempy = confx, confy
-        while tempx in range(rr[0], 7-rr[0]+1) or tempy in range(rr[1],
-                                                                 7-rr[1] + 1):
+        confx, confy = tempx, tempy = rr[0], rr[1]
+        while tempx in range(rr[0], self.locx) or tempy in range(rr[1], self.locy):
             confx, confy = tempx, tempy
             tempx, tempy = tempx-1, tempy-1
             if (confx, confy) != (self.locx, self.locy):
                 response.append((confx, confy))
     if not three:
-        confx, confy = self.locx, self.locy
-        tempx, tempy = confx, confy
+        confx, confy = tempx, tempy = self.locx, self.locy
         while tempx in range(0, 8) and tempy in range(0, 8):
             confx, confy = tempx, tempy
             tempx, tempy = tempx-1, tempy+1
@@ -298,16 +295,14 @@ def bishopcheck(self):
                 response.append((confx, confy))
     else:
         rr = max(three)
-        confx, confy = self.locx, self.locy
-        tempx, tempy = confx, confy
+        confx, confy = tempx, tempy = self.locx, self.locy
         while tempx in range(rr[0], 7-rr[0]+1) or tempy in range(rr[1]+1):
             confx, confy = tempx, tempy
             tempx, tempy = tempx-1, tempy+1
             if (confx, confy) != (self.locx, self.locy):
                 response.append((confx, confy))
     if not four:
-        confx, confy = self.locx, self.locy
-        tempx, tempy = confx, confy
+        confx, confy = tempx, tempy = self.locx, self.locy
         while tempx in range(0, 8) and tempy in range(0, 8):
             confx, confy = tempx, tempy
             tempx, tempy = tempx+1, tempy+1
@@ -315,14 +310,13 @@ def bishopcheck(self):
                 response.append((confx, confy))
     else:
         rr = min(four)
-        confx, confy = self.locx, self.locy
-        tempx, tempy = confx, confy
+        confx, confy = tempx, tempy = self.locx, self.locy
         while tempx in range(rr[0]+1) or tempy in range(rr[1]+1):
             confx, confy = tempx, tempy
             tempx, tempy = tempx+1, tempy+1
             if (confx, confy) != (self.locx, self.locy):
                 response.append((confx, confy))    
-    colourstrip(response, self)        
+    colourstrip(response, self)
     return response
 
 class Queen(Piece):
@@ -340,8 +334,9 @@ class Queen(Piece):
             response.append(item)
         colourstrip(response, self)
         return response
+
     def movebox(self):
-        return attackbox(self)
+        return self.attackbox()
 
 class King(Piece):
     def getsym(self):
@@ -394,21 +389,17 @@ turn=1
 
 pieces=[]
 
-pieces.append(Rook("White", 1, 2))
+pieces.append(Pawn("Black", 3, 3))
 
-pieces.append(Rook("White", 2, 2))
+pieces.append(Pawn("White", 4, 5))
 
-pieces.append(Rook("White", 2, 6))
+pieces.append(Queen("White", 5, 5))
 
-pieces.append(Rook("Black", 2, 1))
-
-pieces.append(Rook("Black", 5, 5))
 
 pieces.append(King("White", 1, 4))
 
 pieces.append(King("Black", 0, 0))
 
-print(pieces[2].attackbox())
 ##end scenario testing
 
 
