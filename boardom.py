@@ -42,8 +42,8 @@ def refreshdisplay():
 def display(pieces):
     refreshdisplay()
     for item in pieces:
-        board[item.locy][item.locx]=item.getsym()
-    count=1
+        board[item.locy][item.locx] = item.getsym()
+    count = 1
     print("Turn "+str(turn)+": "+whoseturn("normal")+"'s move \n")
     print("   A  B  C  D  E  F  G  H ")
     for row in board:
@@ -62,10 +62,11 @@ def whoseturn(state):
 ##attackbox refers to what squares the piece is "threatening" and movebox is where it can go -
 ##pawns are the reason this distinction has been made.
 class Piece():
-    def __init__(self,colour,locx,locy):
+    def __init__(self, colour, locx, locy):
         self.locx = locx
         self.locy = locy
         self.colour = colour
+
 
 class Pawn(Piece):
     def getsym(self):
@@ -73,8 +74,9 @@ class Pawn(Piece):
             return "P"
         elif self.colour == "Black":
             return "p"
+
     def attackbox(self):
-        response=[]
+        response = []
         if self.colour == "White":
             for item in pieces:
                 if item.locx == self.locx+1 and item.locy == self.locy-1:
@@ -90,8 +92,8 @@ class Pawn(Piece):
         return response
 
     def movebox(self):
-        response=[]
-        if self.colour=="White":
+        response = []
+        if self.colour == "White":
             if self.locy == 7:
                 return #code for promotion is inserted here????? maybe??? i dunno
             else:
@@ -106,7 +108,7 @@ class Pawn(Piece):
                     elif item.locx == self.locx-1 and item.locy == self.locy-1:
                         response.append((item.locx, item.locy))
         else:
-            if self.locy==0:
+            if self.locy == 0:
                 return
             else:
                 response.append((self.locx, self.locy+1))
@@ -127,33 +129,32 @@ class Rook(Piece):
             return "R"
         elif self.colour == "Black":
             return "r"
+
     def attackbox(self):
         return rookcheck(self)
+
     def movebox(self):
         return rookcheck(self)
 
 def rookcheck(self): #rook and bishop still suck, the functions that is
-    left=[] 
-    right=[] # <= turn these 4 into one dict
-    up=[]
-    down=[]
-
+    left = [] 
+    right = [] # <= turn these 4 into one dict
+    up = []
+    down = []
     for item in pieces:
         if item.locx == self.locx and self.locy - item.locy < 0:
             down.append(item)
         elif item.locx == self.locx and self.locy - item.locy > 0:
-            up.append(item)               
+            up.append(item)
         elif item.locy == self.locy and self.locx - item.locx < 0:
             right.append(item)
         elif item.locy == self.locy and self.locx - item.locx > 0:
             left.append(item)
-
     leftmost = getclosestpiece(left, "locx", -1)
     rightmost = getclosestpiece(right, "locx", 8)
     upmost = getclosestpiece(up, "locy", -1)
     downmost = getclosestpiece(down, "locy", 8)
-
-    response=[]
+    response = []
     for number in range(0, self.locx-leftmost):
         if (self.locx-number, self.locy) != (self.locx, self.locy):
             response.append((self.locx-number, self.locy))
@@ -188,8 +189,9 @@ class Knight(Piece):
             return "K"
         elif self.colour == "Black":
             return "k"
+
     def movebox(self):
-        response=[]
+        response = []
         #we're simply looping every possible L-move and checking if it's on the board
         xmod, ymod = 2, 1
         for i in range(9): 
@@ -204,6 +206,7 @@ class Knight(Piece):
             
         colourstrip(response, self)
         return response
+
     def attackbox(self):
         return self.movebox()
 
@@ -213,55 +216,62 @@ class Bishop(Piece):
             return "B"
         if self.colour == "Black":
             return "b"
+
     def attackbox(self):
         return bishopcheck(self)
+
     def movebox(self):
         return bishopcheck(self)
-        
+
+  
 def bishopcheck(self):
-    ##1 is top-right, 2 is top-left, 3 is bottom-left, 4 is bottom-right (diagonals)
-    one=[]
-    two=[]
-    three=[]
-    four=[]
+    # 1 is top-right, 2 is top-left, 3 is bottom-left, 4 is bottom-right
+    # (diagonals)
+    one = []
+    two = []
+    three = []
+    four = []
     for item in pieces:
         if (item.locx, item.locy) == (self.locx, self.locy):
             pass
-        elif (item.locx - self.locx)**2 == (item.locy-self.locy)**2 :
-            ##this checks if a piece is on the diagonal, now we want 'em sorted into the 4 quadrant groups.
+        elif (item.locx - self.locx)**2 == (item.locy-self.locy)**2:
+            # this checks if a piece is on the diagonal, now we want 'em sorted
+            # into the 4 quadrant groups.
             if item.locx-self.locx > 0:
-                if item.locy-self.locy >0:
+                if item.locy-self.locy > 0:
                     four.append((item.locx, item.locy))
-                else: #item.locy-self.locy <0
+                else:  # item.locy-self.locy <0
                     one.append((item.locx, item.locy))
-            else: #item.locx-self.locx<0
-                if item.locy-self.locy >0:
+            else:  # item.locx-self.locx<0
+                if item.locy-self.locy > 0:
                     three.append((item.locx, item.locy))
-                else: #item.locy-self.locy <0
+                else:  # item.locy-self.locy <0
                     two.append((item.locx, item.locy))
 
 ##the bit that follows needs to be cleaned up despearately lolll
 ##later on I'll clean it up, right now, I just want something that works.
-    response=[]
+    response = []
     if not one: ##if we look just at the 'one' diagonal, we will see that it's possible for it to be empty or full.
         confx, confy  = self.locx, self.locy
         tempx, tempy = confx, confy
-        while tempx in range(0, 8) and tempy in range(0, 8): #since we are +1 at end, make it 6+1
+        while tempx in range(0, 8) and tempy in range(0, 8):  # since we are +1
+            # at end, make it 6+1
             confx, confy = tempx, tempy
             tempx, tempy = tempx+1, tempy-1
             if (confx, confy) != (self.locx, self.locy):
                 response.append((confx, confy))
     else:
         rr = min(one)
-        confx, confy  = self.locx, self.locy
+        confx, confy = self.locx, self.locy
         tempx, tempy = confx, confy
-        while tempx in range(rr[0]+1) or tempy in range(rr[1], 7-rr[1]+1): #since we are +1 at end, make it 6+1
+        while tempx in range(rr[0]+1) or tempy in range(rr[1], 7-rr[1]+1):
+            # since we are +1 at end, make it 6+1
             confx, confy = tempx, tempy
             tempx, tempy = tempx+1, tempy-1
             if (confx, confy) != (self.locx, self.locy):
                 response.append((confx, confy))
-    if not two: 
-        confx, confy  = self.locx, self.locy
+    if not two:
+        confx, confy = self.locx, self.locy
         tempx, tempy = confx, confy
         while tempx in range(0, 8) and tempy in range(0, 8):
             confx, confy = tempx, tempy
@@ -270,15 +280,16 @@ def bishopcheck(self):
                 response.append((confx, confy))
     else:
         rr = max(two)
-        confx, confy  = self.locx, self.locy
+        confx, confy = self.locx, self.locy
         tempx, tempy = confx, confy
-        while tempx in range(rr[0], 7-rr[0]+1) or tempy in range(rr[1], 7-rr[1]+1):
+        while tempx in range(rr[0], 7-rr[0]+1) or tempy in range(rr[1],
+                                                                 7-rr[1] + 1):
             confx, confy = tempx, tempy
             tempx, tempy = tempx-1, tempy-1
             if (confx, confy) != (self.locx, self.locy):
                 response.append((confx, confy))
-    if not three: 
-        confx, confy  = self.locx, self.locy
+    if not three:
+        confx, confy = self.locx, self.locy
         tempx, tempy = confx, confy
         while tempx in range(0, 8) and tempy in range(0, 8):
             confx, confy = tempx, tempy
@@ -287,15 +298,15 @@ def bishopcheck(self):
                 response.append((confx, confy))
     else:
         rr = max(three)
-        confx, confy  = self.locx, self.locy
+        confx, confy = self.locx, self.locy
         tempx, tempy = confx, confy
         while tempx in range(rr[0], 7-rr[0]+1) or tempy in range(rr[1]+1):
             confx, confy = tempx, tempy
             tempx, tempy = tempx-1, tempy+1
             if (confx, confy) != (self.locx, self.locy):
                 response.append((confx, confy))
-    if not four: 
-        confx, confy  = self.locx, self.locy
+    if not four:
+        confx, confy = self.locx, self.locy
         tempx, tempy = confx, confy
         while tempx in range(0, 8) and tempy in range(0, 8):
             confx, confy = tempx, tempy
@@ -304,7 +315,7 @@ def bishopcheck(self):
                 response.append((confx, confy))
     else:
         rr = min(four)
-        confx, confy  = self.locx, self.locy
+        confx, confy = self.locx, self.locy
         tempx, tempy = confx, confy
         while tempx in range(rr[0]+1) or tempy in range(rr[1]+1):
             confx, confy = tempx, tempy
@@ -320,6 +331,7 @@ class Queen(Piece):
             return "Q"
         if self.colour == "Black":
             return "q"
+
     def attackbox(self):
         response = []
         for item in rookcheck(self):
@@ -337,6 +349,7 @@ class King(Piece):
             return "G"
         if self.colour == "Black":
             return "g"
+
     def movebox(self):
         response = self.attackbox()
         return response
@@ -373,8 +386,8 @@ def colourstrip(response, piece): #you can't capture your own piece!
             response.remove((item.locx, item.locy))
     return response
 
-
-
+  
+  
 ##scenario testing for debugging here
 
 turn=1
@@ -422,6 +435,7 @@ def reset():
 
 reset()
 
+
 def mainloop():
     global turn
     cache=None
@@ -466,7 +480,7 @@ def confirmmove(start, end): #we want to find the piece with the starting co-ord
     if flag==False:
         print("Something went wrong, try again - "+ error)
     return flag
-    
+
 def executemove(start, end):
 #we want to remove anything in the `end` position and then change the loc values of the piece in `start` to be `end` 
     cache=None
