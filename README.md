@@ -4,3 +4,14 @@ This shouldn't be a project of any significance. If it was my choice, you wouldn
 The cost of viewing is constructive feedback for me, please be nice & helpful, not judgemental. I know most of this is garbage at the moment, but hey, you had to start somewhere too, eh?
 
 This is meant to eventually be a python implementation of a chess engine, using no "imports". Cheers.
+
+
+ ```
+ key:    0 - empty square       
+         p - pawn
+         r - rook
+         k - knight
+         b - bishop
+         q - queen
+         g - king
+ lowercase letters denotes black piece, UPPERCASE LETTERS DENOTE WHITE```
