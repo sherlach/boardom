@@ -6,23 +6,24 @@
 # am considering making all the global terms IN ALL CAPS now that I have more knowledge, should 
 # help making things clearer to understand
 
+
 #▒ welcome to boardom ▒#
+#This is a chess engine implemented in python without using `import` statements. It is a
+#project for me cut my teeth on, as it were. My goal is to start learning C, and learning
+#it well, which is a daunting task - so if this script goes well, it'll be my little
+#farewell to beginner's python. And it'll help me to claim that I finished what I started!
+
+
 print("▒ welcome to boardom ▒")
 
 
-##this part sets up the dictionary and function to allow for A1 as input, not (0,0)
+##this part sets up the dictionary and function to allow for A1 as input, instead of (0,0)
 coordict = {
 }
 
-coordict.update(dict.fromkeys(['A', '1'], 0))
-coordict.update(dict.fromkeys(['B', '2'], 1))
-coordict.update(dict.fromkeys(['C', '3'], 2))
-coordict.update(dict.fromkeys(['D', '4'], 3))
-coordict.update(dict.fromkeys(['E', '5'], 4))
-coordict.update(dict.fromkeys(['F', '6'], 5))
-coordict.update(dict.fromkeys(['G', '7'], 6))
-coordict.update(dict.fromkeys(['H', '8'], 7))
-
+letters = "ABCDEFGH"
+for number in range(7):
+    coordict.update(dict.fromkeys([letters[number], str(number+1)], number))
 
 def coordtrans(thing):
     x = coordict[thing[0]] #is the letter
@@ -50,17 +51,11 @@ def display(pieces):
         count+=1
     print("\n")
 
-def whoseturn(state): #make this cleaner???! but how?!?!
-    if state == "normal":
-        if turn % 2 == 1:
-            return "White"
-        else:
-            return "Black"
-    elif state == "reverse":
-        if turn % 2 == 1:
-            return "Black"
-        else:
-            return "White"
+def whoseturn(state):
+    modturn = turn+1 if state == "reverse" else turn #we want to modify the turn to reverse the outcome if necessary
+    player = "White" if modturn % 2 == 1 else "Black" #self-explanatory
+    return player
+
 
 
 ##set up the piece classes. (locx, locy) is the current position.
@@ -142,6 +137,7 @@ def rookcheck(self): #rook and bishop still suck, the functions that is
     right=[] # <= turn these 4 into one dict
     up=[]
     down=[]
+
     for item in pieces:
         if item.locx == self.locx and self.locy - item.locy < 0:
             down.append(item)
@@ -150,37 +146,13 @@ def rookcheck(self): #rook and bishop still suck, the functions that is
         elif item.locy == self.locy and self.locx - item.locx < 0:
             right.append(item)
         elif item.locy == self.locy and self.locx - item.locx > 0:
-            left.append(item)          
-        #else:
-        #    pass
-    templist = []
-    for item in left:
-        templist.append(item.locx)
-    if left:
-        leftmost = min(templist)-1
-    else:
-        leftmost = -1
-    templist = []
-    for item in right:
-        templist.append(item.locx)
-    if right:
-        rightmost = max(templist)+1 #since we are expecting a negative number and we want the "least negative"
-    else:
-        rightmost = 8
-    templist = []
-    for item in up:
-        templist.append(item.locy)
-    if up:
-        upmost = min(templist)-1
-    else:
-        upmost = -1
-    templist = []
-    for item in down:
-        templist.append(item.locy)
-    if down:
-        downmost = max(templist)+1
-    else:
-        downmost = 8
+            left.append(item)
+
+    leftmost = getclosestpiece(left, "locx", -1)
+    rightmost = getclosestpiece(right, "locx", 8)
+    upmost = getclosestpiece(up, "locy", -1)
+    downmost = getclosestpiece(down, "locy", 8)
+
     response=[]
     for number in range(0, self.locx-leftmost):
         if (self.locx-number, self.locy) != (self.locx, self.locy):
@@ -195,7 +167,20 @@ def rookcheck(self): #rook and bishop still suck, the functions that is
         if (self.locx, self.locy+number) != (self.locx, self.locy):
             response.append((self.locx, self.locy+number))
     colourstrip(response, self)
-    return response    
+    return response 
+
+def getclosestpiece(selection, orientation, polarity):  # selection is list, orientation is locx or locy?
+    templist = []                                       # polarity is positive or negative relative to current loc
+    response = polarity                                 # (closer to 8? or closer to -1?)
+    if polarity == 8 or polarity == -1:                                
+        if selection:
+            for item in selection:                              
+                if orientation == "locx": templist.append(item.locx)
+                if orientation == "locy": templist.append(item.locy)
+
+            response = max(templist)+1 if polarity == 8 else min(templist)-1
+
+    return response
 
 class Knight(Piece):
     def getsym(self):
@@ -416,27 +401,24 @@ print(pieces[2].attackbox())
 
 def reset():
     global turn, pieces
+
     turn=1
     pieces = []
     for number in range(8):
         pieces.append(Pawn("White", number, 6))
         pieces.append(Pawn("Black", number, 1))
-    pieces.append(Rook("White", 0, 7))
-    pieces.append(Rook("White", 7, 7))
-    pieces.append(Knight("White", 1, 7))
-    pieces.append(Knight("White", 6, 7))
-    pieces.append(Bishop("White", 2, 7))
-    pieces.append(Bishop("White", 5, 7))
-    pieces.append(Queen("White", 3, 7))
-    pieces.append(King("White", 4, 7))
-    pieces.append(Rook("Black", 0, 0))
-    pieces.append(Rook("Black", 7, 0))
-    pieces.append(Knight("Black", 1, 0))
-    pieces.append(Knight("Black", 6, 0))
-    pieces.append(Bishop("Black", 2, 0))
-    pieces.append(Bishop("Black", 5, 0))
-    pieces.append(Queen("Black", 3, 0))
-    pieces.append(King("Black", 4, 0))
+
+    row, colour = 0, "Black"
+    while row < 8:
+        pieces.append(Rook(colour, 0, row))
+        pieces.append(Rook(colour, 7, row))
+        pieces.append(Knight(colour, 1, row))
+        pieces.append(Knight(colour, 6, row))
+        pieces.append(Bishop(colour, 2, row))
+        pieces.append(Bishop(colour, 5, row))
+        pieces.append(Queen(colour, 3, row))
+        pieces.append(King(colour, 4, row))
+        row, colour = row+7, "White"
 
 reset()
 
