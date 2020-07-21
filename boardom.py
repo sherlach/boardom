@@ -3,7 +3,7 @@
 # [] Ugly code part 2 (make it efficient)
 # [] some edge cases may be ultra buggy
 # [] pawn promotion and castling
-# [] pawns can move 2 squares on any time they are first moved, it's not tied to turn number!
+# [x] pawns can move 2 squares on any time they are first moved, it's not tied to turn number!
 # am considering making all the global terms IN ALL CAPS now that I have more knowledge, should 
 # help making things clearer to understand
 
@@ -95,11 +95,11 @@ class Pawn(Piece):
     def movebox(self):
         response = []
         if self.colour == "White":
-            if self.locy == 7:
+            if self.locy == 0:
                 return #code for promotion is inserted here????? maybe??? i dunno
             else:
                 response.append((self.locx, self.locy-1))
-                if turn == 1:
+                if self.locy == 6:
                     response.append((self.locx, self.locy-2))
                 for item in pieces:
                     if item.locx == self.locx and item.locy == self.locy-1:
@@ -109,11 +109,11 @@ class Pawn(Piece):
                     elif item.locx == self.locx-1 and item.locy == self.locy-1:
                         response.append((item.locx, item.locy))
         else:
-            if self.locy == 0:
+            if self.locy == 7:
                 return
             else:
                 response.append((self.locx, self.locy+1))
-                if turn == 2:
+                if self.locy == 1:
                     response.append((self.locx, self.locy+2))
                 for item in pieces:
                     if item.locx == self.locx and item.locy == self.locy+1:
@@ -151,10 +151,10 @@ def rookcheck(self): #rook and bishop still suck, the functions that is
             right.append(item)
         elif item.locy == self.locy and self.locx - item.locx > 0:
             left.append(item)
-    leftmost = getclosestpiece(left, "locx", -1)
-    rightmost = getclosestpiece(right, "locx", 8)
-    upmost = getclosestpiece(up, "locy", -1)
-    downmost = getclosestpiece(down, "locy", 8)
+    leftmost = getclosestpiecerook(left, "locx", -1)
+    rightmost = getclosestpiecerook(right, "locx", 8)
+    upmost = getclosestpiecerook(up, "locy", -1)
+    downmost = getclosestpiecerook(down, "locy", 8)
     response = []
     for number in range(0, self.locx-leftmost):
         if (self.locx-number, self.locy) != (self.locx, self.locy):
@@ -171,7 +171,7 @@ def rookcheck(self): #rook and bishop still suck, the functions that is
     colourstrip(response, self)
     return response 
 
-def getclosestpiece(selection, orientation, polarity):  # selection is list, orientation is locx or locy?
+def getclosestpiecerook(selection, orientation, polarity):  # selection is list, orientation is locx or locy?
     templist = []                                       # polarity is positive or negative relative to current loc
     response = polarity                                 # (closer to 8? or closer to -1?)
     if polarity == 8 or polarity == -1:                                
@@ -200,10 +200,8 @@ class Knight(Piece):
                 response.append((self.locx+xmod, self.locy+ymod))
             
             ymod = ymod*(-1)
-            if i % 4 == 1:
-                xmod = xmod*(-1)
-            if i == 3:
-                xmod, ymod = 1, 2
+            if i % 4 == 1: xmod = xmod*(-1)
+            if i == 3: xmod, ymod = 1, 2
             
         colourstrip(response, self)
         return response
@@ -249,75 +247,48 @@ def bishopcheck(self):
                 else:  # item.locy-self.locy <0
                     two.append((item.locx, item.locy))
 
-##the bit that follows needs to be cleaned up despearately lolll
-##later on I'll clean it up, right now, I just want something that works.
-## there is a >lot< of redundancy that would be fixed by thinking about what the
-## algorithm is meant to be doing
+#we churn down each of the two diagonals, from st->eb and from sb->et, given piece's context
+
+#st-"start-top", sb-"end-top", et-"end-top", eb-"end-bottom"
+
+    if two: 
+        st = max(two)
+    else:
+        st = ((self.locx-self.locy), 0) if self.locx > self.locy else (0, (self.locy-self.locx))
+
+    if three:
+        sb = max(three)
+    else:
+        sb = (0, (self.locx+self.locy)) if self.locx+self.locy <= 7 else ((self.locx+self.locy-7), 7)
+    
+
+    et = min(one) if one else "nil"
+    eb = min(four) if four else "nil"
+
     response = []
-    if not one: ##if we look just at the 'one' diagonal, we will see that it's possible for it to be empty or full.
-        confx, confy = tempx, tempy = self.locx, self.locy
-        while tempx in range(0, 8) and tempy in range(0, 8):  # since we are +1
-            # at end, make it 6+1
-            confx, confy = tempx, tempy
-            tempx, tempy = tempx+1, tempy-1
-            if (confx, confy) != (self.locx, self.locy):
-                response.append((confx, confy))
-    else:
-        rr = min(one) ##rr is the closest piece to self
-        confx, confy = tempx, tempy = self.locx, self.locy
-        while tempx in range(rr[0]+1) or tempy in range(rr[1], 7-rr[1]+1):
-            # since we are +1 at end, make it 6+1
-            confx, confy = tempx, tempy
-            tempx, tempy = tempx+1, tempy-1
-            if (confx, confy) != (self.locx, self.locy):
-                response.append((confx, confy))
-    if not two:
-        confx, confy = tempx, tempy = self.locx, self.locy
-        while tempx in range(0, 8) and tempy in range(0, 8):
-            confx, confy = tempx, tempy
-            tempx, tempy = tempx-1, tempy-1
-            if (confx, confy) != (self.locx, self.locy):
-                response.append((confx, confy))
-    else:
-        rr = max(two)
-        confx, confy = tempx, tempy = rr[0], rr[1]
-        while tempx in range(rr[0], self.locx) or tempy in range(rr[1], self.locy):
-            confx, confy = tempx, tempy
-            tempx, tempy = tempx-1, tempy-1
-            if (confx, confy) != (self.locx, self.locy):
-                response.append((confx, confy))
-    if not three:
-        confx, confy = tempx, tempy = self.locx, self.locy
-        while tempx in range(0, 8) and tempy in range(0, 8):
-            confx, confy = tempx, tempy
-            tempx, tempy = tempx-1, tempy+1
-            if (confx, confy) != (self.locx, self.locy):
-                response.append((confx, confy))
-    else:
-        rr = max(three)
-        confx, confy = tempx, tempy = self.locx, self.locy
-        while tempx in range(rr[0], 7-rr[0]+1) or tempy in range(rr[1]+1):
-            confx, confy = tempx, tempy
-            tempx, tempy = tempx-1, tempy+1
-            if (confx, confy) != (self.locx, self.locy):
-                response.append((confx, confy))
-    if not four:
-        confx, confy = tempx, tempy = self.locx, self.locy
-        while tempx in range(0, 8) and tempy in range(0, 8):
-            confx, confy = tempx, tempy
-            tempx, tempy = tempx+1, tempy+1
-            if (confx, confy) != (self.locx, self.locy):
-                response.append((confx, confy))
-    else:
-        rr = min(four)
-        confx, confy = tempx, tempy = self.locx, self.locy
-        while tempx in range(rr[0]+1) or tempy in range(rr[1]+1):
-            confx, confy = tempx, tempy
-            tempx, tempy = tempx+1, tempy+1
-            if (confx, confy) != (self.locx, self.locy):
-                response.append((confx, confy))    
+    for item in findpiecesbishop(st,eb, 1, (self.locx, self.locy)):
+        response.append(item)
+    for item in findpiecesbishop(sb,et, -1, (self.locx, self.locy)):
+        response.append(item)
+
     colourstrip(response, self)
     return response
+
+#basically how this func works is we start at the leftmost piece <or empty square> (startpos) 
+#and we loop all the way up/down to the rightmost (endpos), epic style. of course, this can 
+#either be swooping from (1) top to bottom, or from (2)bottom to top 
+
+def findpiecesbishop(startpos, endpos, orientation, currentpos): #orientation = 1 means top to bottom, -1 = bottom to top
+    response = []
+    loopos = startpos
+    while True:
+        if loopos != currentpos: #we don't want the piece to move to its own position!
+            response.append(loopos)
+        if loopos == endpos or loopos[0] not in range(8) or loopos[1] not in range(8):
+            return response #do I need to break??
+
+        loopos = (loopos[0]+1, loopos[1]+orientation)
+
 
 class Queen(Piece):
     def getsym(self):
@@ -391,9 +362,17 @@ pieces=[]
 
 pieces.append(Pawn("Black", 3, 3))
 
-pieces.append(Pawn("White", 4, 5))
+pieces.append(Bishop("Black", 1, 2))
 
-pieces.append(Queen("White", 5, 5))
+pieces.append(Pawn("Black", 4, 5))
+
+pieces.append(Bishop("White", 3, 5))
+
+pieces.append(Pawn("White", 0, 7))
+
+pieces.append(Bishop("White", 5, 5))
+
+pieces.append(Bishop("Black", 6, 7))
 
 
 pieces.append(King("White", 1, 4))
