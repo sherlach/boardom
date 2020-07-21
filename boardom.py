@@ -80,9 +80,9 @@ class Pawn(Piece):
         response = []
         if self.colour == "White":
             for item in pieces:
-                if item.locx == self.locx+1 and item.locy == self.locy-1:
+                if (item.locx, item.locy) == (self.locx+1, self.locy-1):
                     response.append((item.locx, item.locy))
-                elif item.locx == self.locx-1 and item.locy == self.locy-1:
+                elif (item.locx, item.locy) == (self.locx-1, self.locy-1):
                     response.append((item.locx, item.locy))
         else:
             for item in pieces:
@@ -92,7 +92,7 @@ class Pawn(Piece):
                     response.append((item.locx, item.locy))
         return response
 
-    def movebox(self):
+    def movebox(self): #this could definitely be cleaned up to not have so much White/Black distinction
         response = []
         if self.colour == "White":
             if self.locy == 0:
@@ -102,11 +102,11 @@ class Pawn(Piece):
                 if self.locy == 6:
                     response.append((self.locx, self.locy-2))
                 for item in pieces:
-                    if item.locx == self.locx and item.locy == self.locy-1:
+                    if (item.locx, item.locy) == (self.locx, self.locy-1):
                         response.remove((self.locx, self.locy-1))
-                    elif item.locx == self.locx+1 and item.locy == self.locy-1:
+                    elif (item.locx, item.locy) == (self.locx+1, self.locy-1):
                         response.append((item.locx, item.locy))
-                    elif item.locx == self.locx-1 and item.locy == self.locy-1:
+                    elif (item.locx, item.locy) == (self.locx-1, self.locy-1):
                         response.append((item.locx, item.locy))
         else:
             if self.locy == 7:
@@ -116,11 +116,11 @@ class Pawn(Piece):
                 if self.locy == 1:
                     response.append((self.locx, self.locy+2))
                 for item in pieces:
-                    if item.locx == self.locx and item.locy == self.locy+1:
+                    if (item.locx, item.locy) == (self.locx, self.locy+1):
                         response.remove((self.locx, self.locy+1))
-                    elif item.locx == self.locx+1 and item.locy == self.locy+1:
+                    elif (item.locx, item.locy) == (self.locx+1, self.locy+1):
                         response.append((item.locx, item.locy))
-                    elif item.locx == self.locx-1 and item.locy == self.locy+1:
+                    elif (item.locx, item.locy) == (self.locx-1, self.locy+1):
                         response.append((item.locx, item.locy))
         return response
 
@@ -351,35 +351,6 @@ def colourstrip(response, piece): #you can't capture your own piece!
         if item.colour == piece.colour and (item.locx, item.locy) in list(response):
             response.remove((item.locx, item.locy))
     return response
-
-  
-  
-##scenario testing for debugging here
-
-turn=1
-
-pieces=[]
-
-pieces.append(Pawn("Black", 3, 3))
-
-pieces.append(Bishop("Black", 1, 2))
-
-pieces.append(Pawn("Black", 4, 5))
-
-pieces.append(Bishop("White", 3, 5))
-
-pieces.append(Pawn("White", 0, 7))
-
-pieces.append(Bishop("White", 5, 5))
-
-pieces.append(Bishop("Black", 6, 7))
-
-
-pieces.append(King("White", 1, 4))
-
-pieces.append(King("Black", 0, 0))
-
-##end scenario testing
 
 
 def reset():
