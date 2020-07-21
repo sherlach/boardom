@@ -43,7 +43,7 @@ def refreshdisplay():
 def display(pieces):
     refreshdisplay()
     for item in pieces:
-        board[item.locy][item.locx] = item.getsym()
+        board[item.locy][item.locx] = item.sym
     count = 1
     print("Turn "+str(turn)+": "+whoseturn("normal")+"'s move \n")
     print("   A  B  C  D  E  F  G  H ")
@@ -70,11 +70,9 @@ class Piece():
 
 
 class Pawn(Piece):
-    def getsym(self):
-        if self.colour == "White":
-            return "P"
-        elif self.colour == "Black":
-            return "p"
+    def __init__(self, locx, locy, colour):
+        super().__init__(locx, locy, colour)
+        self.sym = "P" if self.colour == "White" else "p"
 
     def attackbox(self):
         response = []
@@ -125,11 +123,9 @@ class Pawn(Piece):
         return response
 
 class Rook(Piece):
-    def getsym(self):
-        if self.colour == "White":
-            return "R"
-        elif self.colour == "Black":
-            return "r"
+    def __init__(self, locx, locy, colour):
+        super().__init__(locx, locy, colour)
+        self.sym = "R" if self.colour == "White" else "r"    
 
     def attackbox(self):
         return rookcheck(self)
@@ -185,11 +181,9 @@ def getclosestpiecerook(selection, orientation, polarity):  # selection is list,
     return response
 
 class Knight(Piece):
-    def getsym(self):
-        if self.colour == "White":
-            return "K"
-        elif self.colour == "Black":
-            return "k"
+    def __init__(self, locx, locy, colour):
+        super().__init__(locx, locy, colour)
+        self.sym = "K" if self.colour == "White" else "k"
 
     def movebox(self):
         response = []
@@ -210,11 +204,9 @@ class Knight(Piece):
         return self.movebox()
 
 class Bishop(Piece):
-    def getsym(self):
-        if self.colour == "White":
-            return "B"
-        if self.colour == "Black":
-            return "b"
+    def __init__(self, locx, locy, colour):
+        super().__init__(locx, locy, colour)
+        self.sym = "B" if self.colour == "White" else "b"
 
     def attackbox(self):
         return bishopcheck(self)
@@ -291,11 +283,9 @@ def findpiecesbishop(startpos, endpos, orientation, currentpos): #orientation = 
 
 
 class Queen(Piece):
-    def getsym(self):
-        if self.colour == "White":
-            return "Q"
-        if self.colour == "Black":
-            return "q"
+    def __init__(self, locx, locy, colour):
+        super().__init__(locx, locy, colour)
+        self.sym = "Q" if self.colour == "White" else "q"
 
     def attackbox(self):
         response = []
@@ -310,11 +300,9 @@ class Queen(Piece):
         return self.attackbox()
 
 class King(Piece):
-    def getsym(self):
-        if self.colour == "White":
-            return "G"
-        if self.colour == "Black":
-            return "g"
+    def __init__(self, locx, locy, colour):
+        super().__init__(locx, locy, colour)
+        self.sym = "G" if self.colour == "White" else "g"
 
     def movebox(self):
         response = self.attackbox()
@@ -339,7 +327,7 @@ def checkcheck(listing, kingcolour): #is the king of colour kingcolour in check?
             if g:
                 for p in g:
                     attackboxes.append(p)
-        elif piece.getsym().lower() == "g":
+        elif piece.sym.lower() == "g":
             kingloc = (piece.locx, piece.locy)
     if kingloc in attackboxes:
         return True
