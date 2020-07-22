@@ -2,7 +2,8 @@
 # [] General ugliness of code (make it readable)
 # [] Ugly code part 2 (make it efficient)
 # [] some edge cases may be ultra buggy
-# [] pawn promotion and castling
+# [x] pawn promotion
+# [] castling
 # [x] pawns can move 2 squares on any time they are first moved, it's not tied to turn number!
 # am considering making all the global terms IN ALL CAPS now that I have more knowledge, should 
 # help making things clearer to understand
@@ -77,6 +78,7 @@ class Pawn(Piece):
     def attackbox(self):
         response = []
         if self.colour == "White":
+            #if self.locy == 0:
             for item in pieces:
                 if (item.locx, item.locy) == (self.locx+1, self.locy-1):
                     response.append((item.locx, item.locy))
@@ -94,7 +96,7 @@ class Pawn(Piece):
         response = []
         if self.colour == "White":
             if self.locy == 0:
-                return #code for promotion is inserted here????? maybe??? i dunno
+                pass
             else:
                 response.append((self.locx, self.locy-1))
                 if self.locy == 6:
@@ -108,7 +110,7 @@ class Pawn(Piece):
                         response.append((item.locx, item.locy))
         else:
             if self.locy == 7:
-                return
+                pass
             else:
                 response.append((self.locx, self.locy+1))
                 if self.locy == 1:
@@ -121,6 +123,21 @@ class Pawn(Piece):
                     elif (item.locx, item.locy) == (self.locx-1, self.locy+1):
                         response.append((item.locx, item.locy))
         return response
+
+def pawnpromotion(): #does it need to be colour specific? idk
+    for item in pieces:
+        if (item.locy == 0 and item.sym == "P") or (item.locy == 7 and item.sym == "p"):
+            pawnloc = (item.locx, item.locy)
+            print("Congrats, your pawn has made it to the final row")
+            newpiece = input("Should it be promoted to Queen, Rook, Knight or Bishop? ")
+            if newpiece.lower() == "queen": pieces.append(Queen(item.colour, item.locx, item.locy))
+            if newpiece.lower() == "rook": pieces.append(Rook(item.colour, item.locx, item.locy))
+            if newpiece.lower() == "knight": pieces.append(Knight(item.colour, item.locx, item.locy))
+            if newpiece.lower() == "bishop": pieces.append(Bishop(item.colour, item.locx, item.locy))
+
+            for item in pieces:
+                if (item.locx, item.locy) == pawnloc and item.sym.lower() == "p":
+                    pieces.remove(item)
 
 class Rook(Piece):
     def __init__(self, locx, locy, colour):
@@ -362,7 +379,13 @@ def reset():
         pieces.append(King(colour, 4, row))
         row, colour = row+7, "White"
 
-reset()
+#reset()
+
+turn=1
+pieces=[]
+pieces.append(Pawn("Black", 6, 5))
+pieces.append(King("White", 6, 6))
+pieces.append(King("Black", 2, 3))
 
 
 def mainloop():
@@ -381,6 +404,7 @@ def mainloop():
         else:
             if checkcheck(pieces, whoseturn("reverse")):
                 print("Check!") #opposite context to the one within confirmmove
+            pawnpromotion()
             turn=turn+1
     else:
         print("Input unsuccessful, refreshing turn...")
@@ -401,7 +425,6 @@ def confirmmove(start, end): #we want to find the piece with the starting co-ord
                 for item in piece.movebox():
                     if item == end:
                         flag=True
-                    #we also need to check if the player put their own king in check, but this is sorta hard since the executemove hasn't happened yet. maybe a "fakepieces"
                     else:
                         error = "You can't move there."
             except:
@@ -421,10 +444,6 @@ def executemove(start, end):
             item.locx = end[0]
             item.locy = end[1]
     return cache
-
-def debug(group):
-    for item in group:
-        print((item.locx, item.locy))
 
 while True:
     mainloop()
