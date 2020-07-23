@@ -3,8 +3,7 @@
 # [] Ugly code part 2 (make it efficient)
 # [] some edge cases may be ultra buggy
 # [x] pawn promotion
-# [] castling
-# [x] pawns can move 2 squares on any time they are first moved, it's not tied to turn number!
+# [x] castling
 # am considering making all the global terms IN ALL CAPS now that I have more knowledge, should 
 # help making things clearer to understand
 
@@ -64,7 +63,7 @@ def whoseturn(state):
 ##attackbox refers to what squares the piece is "threatening" and movebox is where it can go -
 ##pawns are the reason this distinction has been made.
 class Piece():
-    def __init__(self, colour, locx, locy):
+    def __init__(self, locx, locy, colour):
         self.locx = locx
         self.locy = locy
         self.colour = colour
@@ -130,10 +129,10 @@ def pawnpromotion(): #does it need to be colour specific? idk
             pawnloc = (item.locx, item.locy)
             print("Congrats, your pawn has made it to the final row")
             newpiece = input("Should it be promoted to Queen, Rook, Knight or Bishop? ")
-            if newpiece.lower() == "queen": pieces.append(Queen(item.colour, item.locx, item.locy))
-            if newpiece.lower() == "rook": pieces.append(Rook(item.colour, item.locx, item.locy))
-            if newpiece.lower() == "knight": pieces.append(Knight(item.colour, item.locx, item.locy))
-            if newpiece.lower() == "bishop": pieces.append(Bishop(item.colour, item.locx, item.locy))
+            if newpiece.lower() == "queen": pieces.append(Queen(item.locx, item.locy, item.colour))
+            if newpiece.lower() == "rook": pieces.append(Rook(item.locx, item.locy, item.colour))
+            if newpiece.lower() == "knight": pieces.append(Knight(item.locx, item.locy, item.colour))
+            if newpiece.lower() == "bishop": pieces.append(Bishop(item.locx, item.locy, item.colour))
 
             for item in pieces:
                 if (item.locx, item.locy) == pawnloc and item.sym.lower() == "p":
@@ -357,6 +356,42 @@ def colourstrip(response, piece): #you can't capture your own piece!
             response.remove((item.locx, item.locy))
     return response
 
+CASTLEDATA = {"White0":True, "White7":True, "Black0":True, "Black7":True}
+
+def checkcastle(colour, side): #set side up as 0-side or 7-side. kinginit is where king was
+    success = False
+    if CASTLEDATA[colour+side] == True:  #king goes to 6 or 1, rook 5 or 2
+        #if checkcheck(pieces, colour) == False:
+        kingspot = 6 if side == "7" else 1
+        rookspot = 5 if side == "7" else 2
+
+        if colour == "White": #rookspot, kingspot are where we're moving things
+            rookspot = (rookspot, 7)
+            kingspot = (kingspot, 7)
+        else:
+            rookspot = (rookspot, 0)
+            kingspot = (kingspot, 0)
+        for piece in pieces:
+            if piece.sym == Rook(0, 0, colour).sym and (piece.locx, piece.locy) == (int(side), rookspot[1]):
+                if rookspot in piece.movebox() and kingspot in piece.movebox(): #valid since the rook acts like a "sweeper" for movecheck
+                    pieces.remove(piece)
+                    for piece in pieces:
+                        if (piece.locx, piece.locy) == (4, kingspot[1]):
+                            pieces.remove(piece)
+                            success = True
+                            break
+
+    if success:
+            pieces.append(Rook(rookspot[0], rookspot[1], whoseturn("normal")))
+            pieces.append(King(kingspot[0], kingspot[1], whoseturn("normal")))
+            CASTLEDATA[colour+"0"], CASTLEDATA[colour+"7"] = False, False
+            return True
+    else:
+        print("Invalid attempt to castle.")
+        return False
+    
+    
+
 
 def reset():
     global turn, pieces
@@ -364,29 +399,22 @@ def reset():
     turn=1
     pieces = []
     for number in range(8):
-        pieces.append(Pawn("White", number, 6))
-        pieces.append(Pawn("Black", number, 1))
+        pieces.append(Pawn(number, 6, "White"))
+        pieces.append(Pawn(number, 1, "Black"))
 
     row, colour = 0, "Black"
     while row < 8:
-        pieces.append(Rook(colour, 0, row))
-        pieces.append(Rook(colour, 7, row))
-        pieces.append(Knight(colour, 1, row))
-        pieces.append(Knight(colour, 6, row))
-        pieces.append(Bishop(colour, 2, row))
-        pieces.append(Bishop(colour, 5, row))
-        pieces.append(Queen(colour, 3, row))
-        pieces.append(King(colour, 4, row))
+        pieces.append(Rook(0, row, colour))
+        pieces.append(Rook(7, row, colour))
+        pieces.append(Knight(1, row, colour))
+        pieces.append(Knight(6, row, colour))
+        pieces.append(Bishop(2, row, colour))
+        pieces.append(Bishop(5, row, colour))
+        pieces.append(Queen(3, row, colour))
+        pieces.append(King(4, row, colour))
         row, colour = row+7, "White"
 
-#reset()
-
-turn=1
-pieces=[]
-pieces.append(Pawn("Black", 6, 5))
-pieces.append(King("White", 6, 6))
-pieces.append(King("Black", 2, 3))
-
+reset()
 
 def mainloop():
     global turn
@@ -394,7 +422,7 @@ def mainloop():
     display(pieces)
     starting, ending = getmove()
     moveflag = confirmmove(starting, ending)
-    if moveflag == True:
+    if moveflag == "normal":
         cache = executemove(starting, ending)
         if checkcheck(pieces, whoseturn("normal")):
             print("But this would put your own king in check! Refreshing turn")
@@ -406,6 +434,8 @@ def mainloop():
                 print("Check!") #opposite context to the one within confirmmove
             pawnpromotion()
             turn=turn+1
+    elif moveflag == "castle":
+        turn=turn+1
     else:
         print("Input unsuccessful, refreshing turn...")
 
@@ -422,9 +452,20 @@ def confirmmove(start, end): #we want to find the piece with the starting co-ord
     for piece in pieces:
         if (piece.locx, piece.locy) == start and piece.colour == whoseturn("normal"): #if there's a piece there ur allowed to control
             try:
+                try:
+                    if piece.sym == King(1, 1, whoseturn("normal")).sym and checkcheck(pieces, whoseturn("normal")) == False:
+                        if (piece.locx, piece.locy) == start:
+                            if end[0] == 1:
+                                #checkcastle(whoseturn("normal"), "0")
+                                flag = "castle" if checkcastle(whoseturn("normal"), "0") else False
+                            elif end[0] == 6:
+                                #checkcastle(whoseturn("normal"), "7")
+                                flag = "castle" if checkcastle(whoseturn("normal"), "7") else False
+                except:
+                    print("Failure of castling")
                 for item in piece.movebox():
                     if item == end:
-                        flag=True
+                        flag="normal"
                     else:
                         error = "You can't move there."
             except:
@@ -441,6 +482,10 @@ def executemove(start, end):
             pieces.remove(item)
             cache = item
         elif (item.locx, item.locy) == start:
+            if item.sym.lower() == "g":
+                CASTLEDATA[item.colour+"0"], CASTLEDATA[item.colour+"7"] = False, False
+            elif item.sym.lower() == "r" and (item.locx == "7" or "0"):
+                CASTLEDATA[item.colour+str(item.locx)] = False
             item.locx = end[0]
             item.locy = end[1]
     return cache
